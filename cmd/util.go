@@ -79,3 +79,24 @@ func mustStrToPrice(str string) float32 {
 
 	return float32(price)
 }
+
+func mustRun(ctx context.Context, actions ...chromedp.Action) {
+	err := chromedp.Run(ctx, actions...)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func mustRunWithSuccessfulResp(ctx context.Context, actions ...chromedp.Action) {
+
+	for {
+		resp, err := chromedp.RunResponse(ctx, actions...)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if resp != nil {
+			break
+		}
+	}
+}
