@@ -36,17 +36,19 @@ var (
 		gigabyte: "gigabyte",
 		asus:     "asus",
 	}
-	gpuModel       string
-	brand          string
-	version        string
-	sku            string
-	jsonFileName   string
-	email          string
-	password       string
-	isTest         bool
-	limit          float32
-	remainingFunds float32
-	mu             sync.Mutex
+	gpuModel        string
+	brand           string
+	version         string
+	sku             string
+	jsonFileName    string
+	paylpalEmail    string
+	paylpalPassword string
+	bestbuyEmail    string
+	bestbuyPassword string
+	isTest          bool
+	limit           float32
+	remainingFunds  float32
+	mu              sync.Mutex
 )
 
 func init() {
@@ -56,8 +58,10 @@ func init() {
 	Exec.Flags().StringVarP(&sku, "sku", "s", "", "sku of the gpu you wish to purchase")
 	Exec.Flags().StringVarP(&jsonFileName, "json", "j", "", "json file containing gpus to purchase")
 	Exec.Flags().Float32VarP(&limit, "limit", "l", 0, "limit in usd of gpus to purchase")
-	Exec.Flags().StringVarP(&email, "email", "e", "", "paypal email")
-	Exec.Flags().StringVarP(&password, "password", "p", "", "paypal password")
+	Exec.Flags().StringVar(&paylpalEmail, "paypal-email", "", "paypal email")
+	Exec.Flags().StringVar(&paylpalPassword, "paypal-password", "", "paypal password")
+	Exec.Flags().StringVar(&bestbuyEmail, "bestbuy-email", "e", "bestbuy email")
+	Exec.Flags().StringVar(&bestbuyPassword, "bestbuy-password", "", "bestbuy password")
 	Exec.Flags().BoolVar(&isTest, "test", false, "will not confirm any orders if true")
 }
 
@@ -124,6 +128,7 @@ func execBot(parentCtx context.Context, url string) {
 		return
 	}
 	addToCart(ctx)
+	login(ctx)
 	if !withinPriceRange(ctx, ".price-summary__total-value") {
 		log.Printf("exceeded price range, shutting down bot; remainingFunds: %.2f\n", remainingFunds)
 		return
