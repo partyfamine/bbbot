@@ -41,6 +41,7 @@ func withinPriceRange(ctx context.Context, priceSelector string) bool {
 	}
 
 	var priceStr string
+	declineSurvey(ctx)
 	err := chromedp.Run(ctx, chromedp.Text(priceSelector, &priceStr, chromedp.ByQuery))
 	if err != nil {
 		log.Fatal(err)
@@ -81,6 +82,7 @@ func mustStrToPrice(str string) float32 {
 }
 
 func mustRun(ctx context.Context, actions ...chromedp.Action) {
+	declineSurvey(ctx)
 	err := chromedp.Run(ctx, actions...)
 	if err != nil {
 		log.Fatal(err)
@@ -90,6 +92,7 @@ func mustRun(ctx context.Context, actions ...chromedp.Action) {
 func mustRunWithSuccessfulResp(ctx context.Context, actions ...chromedp.Action) {
 
 	for {
+		declineSurvey(ctx)
 		resp, err := chromedp.RunResponse(ctx, actions...)
 		if err != nil {
 			log.Fatal(err)

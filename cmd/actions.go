@@ -11,9 +11,12 @@ import (
 func navigateToPage(ctx context.Context, url string) {
 	title := ""
 	log.Printf("navigating to %s\n", url)
-	mustRun(ctx,
+	err := chromedp.Run(ctx,
 		chromedp.Navigate(url),
 		chromedp.Title(&title))
+	if err != nil {
+		log.Fatal(err)
+	}
 	log.Println(title)
 }
 
@@ -21,9 +24,11 @@ func waitForStock(ctx context.Context) {
 	var btnText string
 
 	for {
-		mustRun(ctx,
-			chromedp.Reload(),
-			chromedp.Text(".add-to-cart-button", &btnText, chromedp.ByQuery))
+		mustRunWithSuccessfulResp(ctx, chromedp.Reload())
+
+		for !elementExists(ctx, ".add-to-cart-button") {
+		}
+		mustRun(ctx, chromedp.Text(".add-to-cart-button", &btnText, chromedp.ByQuery))
 
 		if btnText == "Add to Cart" {
 			log.Println("in stock!!!")
@@ -51,7 +56,7 @@ func addToCart(ctx context.Context) {
 		goToCart = ".cart-link"
 	}
 	log.Println("added to cart")
-	mustRun(ctx, chromedp.Click(goToCart, chromedp.ByQuery))
+	mustRunWithSuccessfulResp(ctx, chromedp.Click(goToCart, chromedp.ByQuery))
 	log.Println("loaded cart")
 }
 
@@ -104,4 +109,13 @@ func login(ctx context.Context) {
 	mustRun(ctx, chromedp.SendKeys("fld-p1", bestbuyPassword, chromedp.ByID))
 	mustRunWithSuccessfulResp(ctx, chromedp.Click(".cia-form__controls__submit", chromedp.ByQuery))
 	log.Println("signed in")
+}
+
+func declineSurvey(ctx context.Context) {
+	if elementExists(ctx, "#survey_invite_no") {
+		err := chromedp.Run(ctx, chromedp.Click("#survey_invite_no", chromedp.ByID))
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }
