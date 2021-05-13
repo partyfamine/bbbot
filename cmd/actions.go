@@ -56,7 +56,7 @@ func addToCart(ctx context.Context) {
 		goToCart = ".cart-link"
 	}
 	log.Println("added to cart")
-	mustRunWithSuccessfulResp(ctx, chromedp.Click(goToCart, chromedp.ByQuery))
+	mustRun(ctx, chromedp.Click(goToCart, chromedp.ByQuery))
 	log.Println("loaded cart")
 }
 
