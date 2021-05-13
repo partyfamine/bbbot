@@ -101,33 +101,47 @@ func exec(cmd *cobra.Command, args []string) {
 		wg.Add(len(skus))
 		for _, skuID := range skus {
 			go func(skuID string) {
-				url := fmt.Sprintf("http://www.bestbuy.com/site/%[1]s.p?skuId=%[1]s", skuID)
-				execBot(ctx, url)
+				execBot(ctx, skuID)
 				wg.Done()
 			}(skuID)
 		}
 		wg.Wait()
 	} else {
-		url := parseURL()
 		ctx, cancel := context.WithCancel(context.Background())
 		handleInterrupt(cancel)
-		execBot(ctx, url)
+		execBot(ctx, sku)
 	}
 }
 
-func execBot(parentCtx context.Context, url string) {
+func execBot(parentCtx context.Context, skuID string) {
+	url := fmt.Sprintf("http://www.bestbuy.com/site/%[1]s.p?skuId=%[1]s", skuID)
 	allocateCtx, cancelAllocate := chromedp.NewExecAllocator(parentCtx, opts...)
 	defer cancelAllocate()
 	ctx, cancel := chromedp.NewContext(allocateCtx)
 	defer cancel()
 
 	navigateToPage(ctx, url)
-	waitForStock(ctx)
-	if !withinPriceRange(ctx, ".priceView-customer-price span") {
-		log.Printf("exceeded price range, shutting down bot; remainingFunds: %.2f\n", remainingFunds)
-		return
+	for {
+		isInStock := inStock(ctx)
+		if isInStock {
+			correctItemAdded := addToCart(ctx, skuID)
+			if !correctItemAdded {
+				log.Println("incorrect item added")
+				mustRun(ctx, chromedp.Click(".cart-item__remove", chromedp.AtLeast(0), chromedp.ByQuery))
+				for elementExists(ctx, ".cart-item__remove") {
+				}
+				navigateToPage(ctx, url)
+				continue
+			}
+		}
+		if !withinPriceRange(ctx, ".priceView-customer-price span") {
+			log.Printf("exceeded price range, shutting down bot; remainingFunds: %.2f\n", remainingFunds)
+			return
+		}
+		if isInStock {
+			break
+		}
 	}
-	addToCart(ctx)
 	login(ctx)
 	if !withinPriceRange(ctx, ".price-summary__total-value") {
 		log.Printf("exceeded price range, shutting down bot; remainingFunds: %.2f\n", remainingFunds)
