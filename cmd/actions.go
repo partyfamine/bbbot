@@ -62,7 +62,7 @@ func addToCart(ctx context.Context, skuID string) {
 	log.Println("loaded cart")
 }
 
-func payWithPaypal(ctx context.Context) {
+func payWithPaypal(ctx context.Context, skuID string) {
 	log.Println("checking out via paypal")
 	priceStr := ""
 	mustRun(ctx, chromedp.Text(".price-summary__total-value", &priceStr, chromedp.ByQuery))
@@ -72,6 +72,10 @@ func payWithPaypal(ctx context.Context) {
 		mu.Lock()
 		remainingFunds -= float32(cartPrice)
 		mu.Unlock()
+	}
+
+	if !elementExists(ctx, "#cart-"+skuID) {
+		log.Fatal("wrong item added to cart, aborting")
 	}
 
 	mustRunWithSuccessfulResp(ctx, chromedp.Click(".checkout-buttons__paypal", chromedp.ByQuery))

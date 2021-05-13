@@ -132,6 +132,6 @@ func execBot(parentCtx context.Context, skuID string) {
 		log.Printf("exceeded price range, shutting down bot; remainingFunds: %.2f\n", remainingFunds)
 		return
 	}
-	payWithPaypal(ctx)
+	payWithPaypal(ctx, skuID)
 	time.Sleep(30 * time.Second) //extra time to finish processing just in case
 }
