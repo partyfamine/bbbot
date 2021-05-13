@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -43,9 +44,10 @@ func waitForStock(ctx context.Context) {
 	}
 }
 
-func addToCart(ctx context.Context) {
+func addToCart(ctx context.Context, skuID string) {
 	log.Println("adding to cart")
-	mustRun(ctx, chromedp.Click(".add-to-cart-button", chromedp.ByQuery))
+	addToCartSelector := fmt.Sprintf("[data-sku-id='%s'].add-to-cart-button.btn-primary", skuID)
+	mustRun(ctx, chromedp.Click(addToCartSelector, chromedp.ByQuery))
 
 	if !elementExists(ctx, ".c-alert-content") {
 		//TODO: screenshot
