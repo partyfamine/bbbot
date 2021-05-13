@@ -21,36 +21,41 @@ func navigateToPage(ctx context.Context, url string) {
 	log.Println(title)
 }
 
-func waitForStock(ctx context.Context) {
+func isInStock(ctx context.Context, skuID string) bool {
 	var btnText string
 
-	for {
-		mustRunWithSuccessfulResp(ctx, chromedp.Reload())
+	mustRunWithSuccessfulResp(ctx, chromedp.Reload())
 
-		for !elementExists(ctx, ".add-to-cart-button") {
-		}
-		mustRun(ctx, chromedp.Text(".add-to-cart-button", &btnText, chromedp.ByQuery))
-
-		if btnText == "Add to Cart" {
-			log.Println("in stock!!!")
-			break
-		} else {
-			log.Printf("out of stock: %s\n", btnText)
-		}
-
-		if !withinPriceRange(ctx, ".priceView-customer-price span") {
-			break
-		}
+	addToCartSelector := fmt.Sprintf("[data-sku-id='%s'].add-to-cart-button.btn-primary", skuID)
+	disabledBtnSelector := fmt.Sprintf("[data-sku-id='%s'].add-to-cart-button.btn-disabled", skuID)
+	for !elementExists(ctx, addToCartSelector) && !elementExists(ctx, disabledBtnSelector) {
 	}
+
+	btnForText := addToCartSelector
+	if elementExists(ctx, disabledBtnSelector) {
+		btnForText = disabledBtnSelector
+	}
+
+	mustRun(ctx, chromedp.Text(btnForText, &btnText, chromedp.ByQuery))
+
+	if btnText == "Add to Cart" {
+		log.Println("in stock!!!")
+		return true
+	}
+	log.Printf("out of stock: %s\n", btnText)
+	return false
 }
 
-func addToCart(ctx context.Context, skuID string) {
+func addToCart(ctx context.Context, skuID string) bool {
 	log.Println("adding to cart")
 	addToCartSelector := fmt.Sprintf("[data-sku-id='%s'].add-to-cart-button.btn-primary", skuID)
 	mustRun(ctx, chromedp.Click(addToCartSelector, chromedp.ByQuery))
 
-	if !elementExists(ctx, ".c-alert-content") {
-		//TODO: screenshot
+	for !elementExists(ctx, ".c-alert-content") && !elementExists(ctx, ".shop-cart-icon .dot") {
+	}
+
+	if elementExists(ctx, ".c-alert-content") {
+		return false
 	}
 
 	goToCart := ".go-to-cart-button"
@@ -60,6 +65,8 @@ func addToCart(ctx context.Context, skuID string) {
 	log.Println("added to cart")
 	mustRun(ctx, chromedp.Click(goToCart, chromedp.ByQuery))
 	log.Println("loaded cart")
+
+	return true
 }
 
 func payWithPaypal(ctx context.Context, skuID string) {

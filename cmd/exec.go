@@ -121,12 +121,24 @@ func execBot(parentCtx context.Context, skuID string) {
 	defer cancel()
 
 	navigateToPage(ctx, url)
-	waitForStock(ctx)
+
+	for {
+		inStock := isInStock(ctx, skuID)
+		if inStock {
+			added := addToCart(ctx, skuID)
+			if !added {
+				continue
+			}
+			if inStock {
+				break
+			}
+		}
+	}
+
 	if !withinPriceRange(ctx, ".priceView-customer-price span") {
 		log.Printf("exceeded price range, shutting down bot; remainingFunds: %.2f\n", remainingFunds)
 		return
 	}
-	addToCart(ctx, skuID)
 	login(ctx)
 	if !withinPriceRange(ctx, ".price-summary__total-value") {
 		log.Printf("exceeded price range, shutting down bot; remainingFunds: %.2f\n", remainingFunds)
