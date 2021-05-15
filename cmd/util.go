@@ -44,6 +44,7 @@ func withinPriceRange(ctx context.Context, priceSelector string) bool {
 	declineSurvey(ctx)
 	err := chromedp.Run(ctx, chromedp.Text(priceSelector, &priceStr, chromedp.ByQuery))
 	if err != nil {
+		log.Println("price failure")
 		log.Fatal(err)
 	}
 

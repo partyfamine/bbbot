@@ -127,9 +127,11 @@ func execBot(parentCtx context.Context, skuID string) {
 		if inStock {
 			added := addToCart(ctx, skuID)
 			if !added {
+				log.Println("false alarm, nothing added")
 				continue
 			}
 			if inStock {
+				log.Println("moving to login")
 				break
 			}
 		}

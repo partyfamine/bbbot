@@ -49,12 +49,17 @@ func isInStock(ctx context.Context, skuID string) bool {
 func addToCart(ctx context.Context, skuID string) bool {
 	log.Println("adding to cart")
 	addToCartSelector := fmt.Sprintf("[data-sku-id='%s'].add-to-cart-button.btn-primary", skuID)
+	if !elementExists(ctx, addToCartSelector) {
+		log.Println("lol nevermind, can't add to cart; reloading")
+		return false
+	}
 	mustRun(ctx, chromedp.Click(addToCartSelector, chromedp.ByQuery))
 
 	for !elementExists(ctx, ".c-alert-content") && !elementExists(ctx, ".shop-cart-icon .dot") {
 	}
 
 	if elementExists(ctx, ".c-alert-content") {
+		log.Println("alert encountered")
 		return false
 	}
 
