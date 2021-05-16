@@ -4,14 +4,16 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/chromedp/chromedp"
 )
 
 type bot struct {
-	sku string
-	url string
+	sku     string
+	url     string
+	logFile *os.File
 }
 
 func newBot(sku string) *bot {
@@ -22,6 +24,13 @@ func newBot(sku string) *bot {
 }
 
 func (b *bot) execBot(parentCtx context.Context) {
+	f, err := os.Create("bot.log")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	b.logFile = f
+
 	b.url = fmt.Sprintf("http://www.bestbuy.com/site/%[1]s.p?skuId=%[1]s", b.sku)
 	allocateCtx, cancelAllocate := chromedp.NewExecAllocator(parentCtx, opts...)
 	defer cancelAllocate()
@@ -189,7 +198,8 @@ func (b *bot) declineSurvey(ctx context.Context) {
 }
 
 func (b *bot) println(msg string) {
-	log.Println(fmt.Sprintf("%s: %s", b.sku, msg))
+	fmt.Fprintf(b.logFile, "%s: %s: %s\n", time.Now().Format(time.Stamp), b.sku, msg)
+	log.Printf("%s: %s\n", b.sku, msg)
 }
 
 func (b *bot) mustRun(ctx context.Context, actions ...chromedp.Action) {
@@ -224,7 +234,7 @@ func (b *bot) withinPriceRange(ctx context.Context, priceSelector string) bool {
 	b.declineSurvey(ctx)
 	err := chromedp.Run(ctx, chromedp.Text(priceSelector, &priceStr, chromedp.ByQuery))
 	if err != nil {
-		log.Println("price failure")
+		b.println("price failure")
 		log.Fatal(err)
 	}
 
