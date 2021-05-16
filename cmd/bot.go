@@ -24,7 +24,7 @@ func newBot(sku string) *bot {
 }
 
 func (b *bot) execBot(parentCtx context.Context) {
-	f, err := os.Create("bot.log")
+	f, err := os.Create(fmt.Sprintf("bot-%s.log", b.sku))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -55,12 +55,12 @@ func (b *bot) execBot(parentCtx context.Context) {
 	}
 
 	if !b.withinPriceRange(ctx, ".priceView-customer-price span") {
-		log.Printf("exceeded price range, shutting down bot; remainingFunds: %.2f\n", remainingFunds)
+		b.printf("exceeded price range, shutting down bot; remainingFunds: %.2f\n", remainingFunds)
 		return
 	}
 	b.login(ctx)
 	if !b.withinPriceRange(ctx, ".price-summary__total-value") {
-		log.Printf("exceeded price range, shutting down bot; remainingFunds: %.2f\n", remainingFunds)
+		b.printf("exceeded price range, shutting down bot; remainingFunds: %.2f\n", remainingFunds)
 		return
 	}
 	b.payWithPaypal(ctx)
@@ -69,7 +69,7 @@ func (b *bot) execBot(parentCtx context.Context) {
 
 func (b *bot) navigateToPage(ctx context.Context) {
 	title := ""
-	log.Printf("navigating to %s\n", b.url)
+	b.printf("navigating to %s\n", b.url)
 	err := chromedp.Run(ctx,
 		chromedp.Navigate(b.url),
 		chromedp.Title(&title))
@@ -100,7 +100,7 @@ func (b *bot) isInStock(ctx context.Context) bool {
 		b.println("in stock!!!")
 		return true
 	}
-	log.Printf("out of stock: %s\n", btnText)
+	b.printf("out of stock: %s\n", btnText)
 	return false
 }
 
@@ -198,8 +198,14 @@ func (b *bot) declineSurvey(ctx context.Context) {
 }
 
 func (b *bot) println(msg string) {
-	fmt.Fprintf(b.logFile, "%s: %s: %s\n", time.Now().Format(time.Stamp), b.sku, msg)
+	fmt.Fprintf(b.logFile, "%s: %s\n", time.Now().Format(time.Stamp), msg)
 	log.Printf("%s: %s\n", b.sku, msg)
+}
+
+func (b *bot) printf(msg string, params ...interface{}) {
+	fmtMsg := fmt.Sprintf(msg, params...)
+	fmt.Fprintf(b.logFile, "%s: %s", time.Now().Format(time.Stamp), fmtMsg)
+	log.Printf("%s: %s", b.sku, fmtMsg)
 }
 
 func (b *bot) mustRun(ctx context.Context, actions ...chromedp.Action) {
