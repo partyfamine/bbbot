@@ -35,30 +35,6 @@ func handleInterrupt(cancel context.CancelFunc) {
 	}()
 }
 
-func withinPriceRange(ctx context.Context, priceSelector string) bool {
-	if limit == 0 {
-		return true
-	}
-
-	var priceStr string
-	declineSurvey(ctx)
-	err := chromedp.Run(ctx, chromedp.Text(priceSelector, &priceStr, chromedp.ByQuery))
-	if err != nil {
-		log.Println("price failure")
-		log.Fatal(err)
-	}
-
-	mu.Lock()
-	curFunds := remainingFunds
-	mu.Unlock()
-
-	gpuPrice := mustStrToPrice(priceStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return float32(gpuPrice) < curFunds
-}
-
 func elementExists(ctx context.Context, path string) bool {
 	var nodes []*cdp.Node
 	if err := chromedp.Run(ctx, chromedp.Nodes(path, &nodes, chromedp.AtLeast(0), chromedp.ByQuery)); err != nil {
@@ -80,27 +56,4 @@ func mustStrToPrice(str string) float32 {
 	}
 
 	return float32(price)
-}
-
-func mustRun(ctx context.Context, actions ...chromedp.Action) {
-	declineSurvey(ctx)
-	err := chromedp.Run(ctx, actions...)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func mustRunWithSuccessfulResp(ctx context.Context, actions ...chromedp.Action) {
-
-	for {
-		declineSurvey(ctx)
-		resp, err := chromedp.RunResponse(ctx, actions...)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if resp != nil {
-			break
-		}
-	}
 }

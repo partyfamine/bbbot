@@ -3,13 +3,10 @@ package cmd
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"sync"
-	"time"
 
-	"github.com/chromedp/chromedp"
 	"github.com/spf13/cobra"
 )
 
@@ -101,7 +98,8 @@ func exec(cmd *cobra.Command, args []string) {
 		wg.Add(len(skus))
 		for _, skuID := range skus {
 			go func(skuID string) {
-				execBot(ctx, skuID)
+				b := newBot(skuID)
+				b.execBot(ctx)
 				wg.Done()
 			}(skuID)
 		}
@@ -109,43 +107,7 @@ func exec(cmd *cobra.Command, args []string) {
 	} else {
 		ctx, cancel := context.WithCancel(context.Background())
 		handleInterrupt(cancel)
-		execBot(ctx, sku)
+		b := newBot(sku)
+		b.execBot(ctx)
 	}
-}
-
-func execBot(parentCtx context.Context, skuID string) {
-	url := fmt.Sprintf("http://www.bestbuy.com/site/%[1]s.p?skuId=%[1]s", skuID)
-	allocateCtx, cancelAllocate := chromedp.NewExecAllocator(parentCtx, opts...)
-	defer cancelAllocate()
-	ctx, cancel := chromedp.NewContext(allocateCtx)
-	defer cancel()
-
-	navigateToPage(ctx, url)
-
-	for {
-		inStock := isInStock(ctx, skuID)
-		if inStock {
-			added := addToCart(ctx, skuID)
-			if !added {
-				log.Println("false alarm, nothing added")
-				continue
-			}
-			if inStock {
-				log.Println("moving to login")
-				break
-			}
-		}
-	}
-
-	if !withinPriceRange(ctx, ".priceView-customer-price span") {
-		log.Printf("exceeded price range, shutting down bot; remainingFunds: %.2f\n", remainingFunds)
-		return
-	}
-	login(ctx)
-	if !withinPriceRange(ctx, ".price-summary__total-value") {
-		log.Printf("exceeded price range, shutting down bot; remainingFunds: %.2f\n", remainingFunds)
-		return
-	}
-	payWithPaypal(ctx, skuID)
-	time.Sleep(30 * time.Second) //extra time to finish processing just in case
 }
