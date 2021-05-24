@@ -35,12 +35,13 @@ func handleInterrupt(cancel context.CancelFunc) {
 	}()
 }
 
-func elementExists(ctx context.Context, path string) bool {
+func elementExists(ctx context.Context, path string) (bool, error) {
 	var nodes []*cdp.Node
-	if err := chromedp.Run(ctx, chromedp.Nodes(path, &nodes, chromedp.AtLeast(0), chromedp.ByQuery)); err != nil {
-		log.Fatal(err)
+	err := chromedp.Run(ctx, chromedp.Nodes(path, &nodes, chromedp.AtLeast(0), chromedp.ByQuery))
+	if err != nil {
+		return false, err
 	}
-	return len(nodes) > 0
+	return len(nodes) > 0, nil
 }
 
 func mustStrToPrice(str string) float32 {
@@ -51,7 +52,7 @@ func mustStrToPrice(str string) float32 {
 	str = strings.ReplaceAll(str, ",", "")
 
 	price, err := strconv.ParseFloat(str, 32)
-	if err != nil {
+	if err != nil && err != context.Canceled {
 		log.Fatal(err)
 	}
 
