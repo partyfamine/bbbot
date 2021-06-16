@@ -39,7 +39,11 @@ func (b *bot) execBot(parentCtx context.Context) {
 	b.url = fmt.Sprintf("http://www.bestbuy.com/site/%[1]s.p?skuId=%[1]s", b.sku)
 
 	for {
-		allocateCtx, cancelAllocate := chromedp.NewExecAllocator(parentCtx, opts...)
+		botOpts := opts
+		if headless {
+			botOpts = append(botOpts, chromedp.Headless, UserAgent)
+		}
+		allocateCtx, cancelAllocate := chromedp.NewExecAllocator(parentCtx, botOpts...)
 		ctx, cancel := chromedp.NewContext(allocateCtx)
 
 		go b.monitor(ctx, cancel)

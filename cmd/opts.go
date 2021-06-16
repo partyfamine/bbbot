@@ -2,6 +2,8 @@ package cmd
 
 import "github.com/chromedp/chromedp"
 
+var UserAgent = chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36")
+
 // Basically default settings minus --headless because it's slow as shit plus some other stuff to
 // increase performance
 var opts = []chromedp.ExecAllocatorOption{

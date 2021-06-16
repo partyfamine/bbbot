@@ -43,6 +43,7 @@ var (
 	bestbuyEmail    string
 	bestbuyPassword string
 	isTest          bool
+	headless        bool
 	limit           float32
 	remainingFunds  float32
 	mu              sync.Mutex
@@ -57,9 +58,15 @@ func init() {
 	Exec.Flags().Float32VarP(&limit, "limit", "l", 0, "limit in usd of gpus to purchase")
 	Exec.Flags().StringVar(&paylpalEmail, "paypal-email", "", "paypal email")
 	Exec.Flags().StringVar(&paylpalPassword, "paypal-password", "", "paypal password")
-	Exec.Flags().StringVar(&bestbuyEmail, "bestbuy-email", "e", "bestbuy email")
+	Exec.Flags().StringVar(&bestbuyEmail, "bestbuy-email", "", "bestbuy email")
 	Exec.Flags().StringVar(&bestbuyPassword, "bestbuy-password", "", "bestbuy password")
 	Exec.Flags().BoolVar(&isTest, "test", false, "will not confirm any orders if true")
+	Exec.Flags().BoolVarP(&isTest, "headless", "h", false, "will not confirm any orders if true")
+
+	Exec.MarkFlagRequired("paypal-email")
+	Exec.MarkFlagRequired("paypal-password")
+	Exec.MarkFlagRequired("bestbuy-email")
+	Exec.MarkFlagRequired("bestbuy-password")
 }
 
 func exec(cmd *cobra.Command, args []string) {
@@ -105,9 +112,23 @@ func exec(cmd *cobra.Command, args []string) {
 		}
 		wg.Wait()
 	} else {
+		skuID := sku
+		if skuID == "" {
+			gpu := GPU{
+				Brand:   brand,
+				Model:   gpuModel,
+				Version: version,
+			}
+			foundSku, ok := skuMap[gpu]
+			if !ok {
+				log.Fatal("gpu not supported")
+			}
+			skuID = foundSku
+		}
+
 		ctx, cancel := context.WithCancel(context.Background())
 		handleInterrupt(cancel)
-		b := newBot(sku)
+		b := newBot(skuID)
 		b.execBot(ctx)
 	}
 }
