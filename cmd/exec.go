@@ -7,6 +7,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/partyfamine/bbbot/bot"
 	"github.com/spf13/cobra"
 )
 
@@ -46,7 +47,6 @@ var (
 	headless        bool
 	limit           float32
 	remainingFunds  float32
-	mu              sync.Mutex
 )
 
 func init() {
@@ -61,7 +61,7 @@ func init() {
 	Exec.Flags().StringVar(&bestbuyEmail, "bestbuy-email", "", "bestbuy email")
 	Exec.Flags().StringVar(&bestbuyPassword, "bestbuy-password", "", "bestbuy password")
 	Exec.Flags().BoolVar(&isTest, "test", false, "will not confirm any orders if true")
-	Exec.Flags().BoolVarP(&isTest, "headless", "h", false, "will not confirm any orders if true")
+	Exec.Flags().BoolVar(&isTest, "headless", false, "will not confirm any orders if true")
 
 	Exec.MarkFlagRequired("paypal-email")
 	Exec.MarkFlagRequired("paypal-password")
@@ -105,8 +105,18 @@ func exec(cmd *cobra.Command, args []string) {
 		wg.Add(len(skus))
 		for _, skuID := range skus {
 			go func(skuID string) {
-				b := newBot(skuID)
-				b.execBot(ctx)
+				b := bot.Bot{
+					Sku:             skuID,
+					Limit:           limit,
+					RemainingFunds:  &remainingFunds,
+					BestbuyEmail:    bestbuyEmail,
+					BestbuyPassword: bestbuyPassword,
+					PaylpalEmail:    paylpalEmail,
+					PaylpalPassword: paylpalPassword,
+					IsTest:          isTest,
+					Headless:        headless,
+				}
+				b.Exec(ctx)
 				wg.Done()
 			}(skuID)
 		}
@@ -128,7 +138,17 @@ func exec(cmd *cobra.Command, args []string) {
 
 		ctx, cancel := context.WithCancel(context.Background())
 		handleInterrupt(cancel)
-		b := newBot(skuID)
-		b.execBot(ctx)
+		b := bot.Bot{
+			Sku:             skuID,
+			Limit:           limit,
+			RemainingFunds:  &remainingFunds,
+			BestbuyEmail:    bestbuyEmail,
+			BestbuyPassword: bestbuyPassword,
+			PaylpalEmail:    paylpalEmail,
+			PaylpalPassword: paylpalPassword,
+			IsTest:          isTest,
+			Headless:        headless,
+		}
+		b.Exec(ctx)
 	}
 }

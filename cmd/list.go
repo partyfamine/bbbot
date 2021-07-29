@@ -17,7 +17,7 @@ var List = &cobra.Command{
 func list(cmd *cobra.Command, args []string) {
 	gpus := make([]GPU, len(skuMap), len(skuMap))
 	i := 0
-	for gpuKey, _ := range skuMap {
+	for gpuKey := range skuMap {
 		gpus[i] = gpuKey
 		i++
 	}

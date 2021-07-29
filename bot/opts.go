@@ -1,4 +1,4 @@
-package cmd
+package bot
 
 import "github.com/chromedp/chromedp"
 
